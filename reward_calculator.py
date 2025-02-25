@@ -9,13 +9,36 @@ import pytz  # zoneinfo 대신 pytz 사용
 if sys.platform.startswith("win") and sys.stdout:
     sys.stdout.reconfigure(encoding="utf-8")
 
+# 상수 정의
+class Constants:
+    WINDOW_TITLE = "(c) 2025. 다인기획 Corp. All rights reserved."
+    WINDOW_SIZE = "500x800"
+    DEFAULT_WORK_DAYS = "7"
+    DEFAULT_COST = "50"
+    COMPANY_INFO = {
+        "name": "주식회사 다인기획",
+        "bank": "국민은행: 900901-01-688580"
+    }
+    COLORS = {
+        'bg': '#FAFAFA',
+        'blue': '#1976D2',
+        'light_blue': '#2196F3',
+        'border': '#E0E0E0',
+        'white': 'white'
+    }
+    FONT = {
+        'family': '맑은 고딕',
+        'size': 11,
+        'title_size': 18
+    }
+
 class CustomButton(tk.Button):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.config(
-            background='#2196F3',  # 파란색 배경
-            foreground='white',     # 흰색 텍스트
-            font=('맑은 고딕', 10, 'bold'),
+            background=Constants.COLORS['light_blue'],
+            foreground=Constants.COLORS['white'],
+            font=(Constants.FONT['family'], 10, 'bold'),
             relief='raised',        # 입체적인 효과
             borderwidth=0,
             padx=20,
@@ -26,10 +49,10 @@ class CustomButton(tk.Button):
         self.bind('<Leave>', self.on_leave)
 
     def on_enter(self, e):
-        self.config(background='#1976D2')  # 더 진한 파란색
+        self.config(background=Constants.COLORS['blue'])
 
     def on_leave(self, e):
-        self.config(background='#2196F3')  # 원래 파란색
+        self.config(background=Constants.COLORS['light_blue'])
 
 def calculate_dates(work_days):
     # 한국 시간으로 현재 날짜 가져오기
@@ -74,8 +97,8 @@ def calculate_cost(traffic_requests, storage_requests, traffic_cost_per_request,
         result_text.insert(tk.END, f"{work_days}일 작업 총 비용 (부가세 미포함): {total:,.0f} 원\n")
         result_text.insert(tk.END, f"{work_days}일 작업 총 비용 (부가세 포함): {total_with_vat:,.0f} 원", 'bold_blue')
         result_text.insert(tk.END, "\n\n")
-        result_text.insert(tk.END, "주식회사 다인기획\n")
-        result_text.insert(tk.END, "국민은행: 900901-01-688580")
+        result_text.insert(tk.END, f"{Constants.COMPANY_INFO['name']}\n")
+        result_text.insert(tk.END, f"{Constants.COMPANY_INFO['bank']}")
     
     result_text.config(state='disabled')
 
@@ -146,27 +169,27 @@ def on_calculate():
 
 # GUI 설정
 root = tk.Tk()
-root.title("(c) 2025. 다인기획 Corp. All rights reserved.")
-root.geometry("500x800")  # 전체 창 높이를 800으로 증가
-root.configure(bg='#FAFAFA')
+root.title(Constants.WINDOW_TITLE)
+root.geometry(Constants.WINDOW_SIZE)  # 전체 창 높이를 800으로 증가
+root.configure(bg=Constants.COLORS['bg'])
 
 # 스타일 설정
 style = ttk.Style()
 style.theme_use('clam')  # 더 현대적인 테마 사용
-style.configure('TFrame', background='#FAFAFA')
+style.configure('TFrame', background=Constants.COLORS['bg'])
 style.configure('TLabel', 
-    background='#FAFAFA', 
-    font=('맑은 고딕', 10),
+    background=Constants.COLORS['bg'], 
+    font=(Constants.FONT['family'], Constants.FONT['size']),
     padding=5
 )
 style.configure('Title.TLabel',
-    background='#FAFAFA',
-    font=('맑은 고딕', 18, 'bold'),
-    foreground='#1976D2'  # 진한 파란색
+    background=Constants.COLORS['bg'],
+    font=(Constants.FONT['family'], Constants.FONT['title_size'], 'bold'),
+    foreground=Constants.COLORS['blue']
 )
 style.configure('TEntry', 
-    font=('맑은 고딕', 10),
-    fieldbackground='white',
+    font=(Constants.FONT['family'], Constants.FONT['size']),
+    fieldbackground=Constants.COLORS['white'],
     borderwidth=2
 )
 
@@ -179,73 +202,73 @@ title_label = ttk.Label(main_frame, text="견적서", style='Title.TLabel')
 title_label.pack(pady=(0, 30))
 
 # 입력 프레임 (그림자 효과를 위한 추가 프레임)
-input_outer_frame = tk.Frame(main_frame, bg='#E0E0E0', bd=1)
+input_outer_frame = tk.Frame(main_frame, bg=Constants.COLORS['border'], bd=1)
 input_outer_frame.pack(fill=tk.X, padx=2, pady=2)
 
-input_frame = tk.Frame(input_outer_frame, bg='white', bd=1)
+input_frame = tk.Frame(input_outer_frame, bg=Constants.COLORS['white'], bd=1)
 input_frame.pack(fill=tk.X, padx=1, pady=1)
 
 # 트래픽 입력
 traffic_frame = ttk.Frame(input_frame)
 traffic_frame.pack(fill=tk.X, padx=20, pady=10)
-ttk.Label(traffic_frame, text="일 트래픽:", background='white').pack(side=tk.LEFT)
+ttk.Label(traffic_frame, text="일 트래픽:", background=Constants.COLORS['white']).pack(side=tk.LEFT)
 entry_traffic = ttk.Entry(traffic_frame)
 entry_traffic.pack(side=tk.RIGHT, expand=True, fill=tk.X, padx=(10, 0))
 
 # 트래픽 단가 입력
 traffic_cost_frame = ttk.Frame(input_frame)
 traffic_cost_frame.pack(fill=tk.X, padx=20, pady=10)
-ttk.Label(traffic_cost_frame, text="트래픽 단가:", background='white').pack(side=tk.LEFT)
+ttk.Label(traffic_cost_frame, text="트래픽 단가:", background=Constants.COLORS['white']).pack(side=tk.LEFT)
 entry_traffic_cost = ttk.Entry(traffic_cost_frame)
 entry_traffic_cost.pack(side=tk.RIGHT, expand=True, fill=tk.X, padx=(10, 0))
-entry_traffic_cost.insert(0, "50")  # 기본값 설정
+entry_traffic_cost.insert(0, Constants.DEFAULT_COST)  # 기본값 설정
 
 # 저장하기 입력
 storage_frame = ttk.Frame(input_frame)
 storage_frame.pack(fill=tk.X, padx=20, pady=10)
-ttk.Label(storage_frame, text="일 저장하기:", background='white').pack(side=tk.LEFT)
+ttk.Label(storage_frame, text="일 저장하기:", background=Constants.COLORS['white']).pack(side=tk.LEFT)
 entry_storage = ttk.Entry(storage_frame)
 entry_storage.pack(side=tk.RIGHT, expand=True, fill=tk.X, padx=(10, 0))
 
 # 저장하기 단가 입력
 storage_cost_frame = ttk.Frame(input_frame)
 storage_cost_frame.pack(fill=tk.X, padx=20, pady=10)
-ttk.Label(storage_cost_frame, text="저장하기 단가:", background='white').pack(side=tk.LEFT)
+ttk.Label(storage_cost_frame, text="저장하기 단가:", background=Constants.COLORS['white']).pack(side=tk.LEFT)
 entry_storage_cost = ttk.Entry(storage_cost_frame)
 entry_storage_cost.pack(side=tk.RIGHT, expand=True, fill=tk.X, padx=(10, 0))
-entry_storage_cost.insert(0, "50")  # 기본값 설정
+entry_storage_cost.insert(0, Constants.DEFAULT_COST)  # 기본값 설정
 
 # 작업 일수 입력
 work_days_frame = ttk.Frame(input_frame)
 work_days_frame.pack(fill=tk.X, padx=20, pady=10)
-ttk.Label(work_days_frame, text="작업 일수:", background='white').pack(side=tk.LEFT)
+ttk.Label(work_days_frame, text="작업 일수:", background=Constants.COLORS['white']).pack(side=tk.LEFT)
 entry_work_days = ttk.Entry(work_days_frame)
 entry_work_days.pack(side=tk.RIGHT, expand=True, fill=tk.X, padx=(10, 0))
-entry_work_days.insert(0, "7")  # 기본값 7일로 설정
+entry_work_days.insert(0, Constants.DEFAULT_WORK_DAYS)  # 기본값 7일로 설정
 
 # 계산 버튼
 calculate_button = CustomButton(main_frame, text="계산하기", command=on_calculate)
 calculate_button.pack(pady=20)
 
 # 결과 표시 영역
-result_outer_frame = tk.Frame(main_frame, bg='#E0E0E0', bd=1)
+result_outer_frame = tk.Frame(main_frame, bg=Constants.COLORS['border'], bd=1)
 result_outer_frame.pack(fill=tk.BOTH, expand=True, pady=(10, 0))
 
-result_frame = tk.Frame(result_outer_frame, bg='white', bd=1)
+result_frame = tk.Frame(result_outer_frame, bg=Constants.COLORS['white'], bd=1)
 result_frame.pack(fill=tk.BOTH, expand=True, padx=1, pady=1)
 
 result_text = tk.Text(result_frame, 
     height=15,  # 높이를 15로 증가
-    font=('맑은 고딕', 11),
-    bg='white',
+    font=(Constants.FONT['family'], Constants.FONT['size']),
+    bg=Constants.COLORS['white'],
     bd=0,
     padx=20,  # 좌우 여백 증가
     pady=20   # 상하 여백 증가
 )
 result_text.pack(fill=tk.BOTH, expand=True)
 result_text.tag_configure('bold_blue', 
-    foreground='#1976D2',
-    font=('맑은 고딕', 11, 'bold')
+    foreground=Constants.COLORS['blue'],
+    font=(Constants.FONT['family'], Constants.FONT['size'], 'bold')
 )
 result_text.config(state='disabled')
 
