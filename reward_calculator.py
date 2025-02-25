@@ -2,6 +2,8 @@ import sys
 import tkinter as tk
 from tkinter import ttk
 from tkinter import font
+from datetime import datetime, timedelta
+import pytz  # zoneinfo 대신 pytz 사용
 
 # Windows 환경에서 UTF-8 설정
 if sys.platform.startswith("win") and sys.stdout:
@@ -29,19 +31,38 @@ class CustomButton(tk.Button):
     def on_leave(self, e):
         self.config(background='#2196F3')  # 원래 파란색
 
-def calculate_cost(traffic_requests, storage_requests, traffic_cost_per_request, storage_cost_per_request, vat_rate=10):
+def calculate_dates(work_days):
+    # 한국 시간으로 현재 날짜 가져오기
+    kr_tz = pytz.timezone('Asia/Seoul')
+    today = datetime.now(kr_tz)
+    
+    # 시작일을 내일로 설정
+    start_date = today + timedelta(days=1)
+    # 종료일 계산 (시작일 포함하여 work_days만큼)
+    end_date = start_date + timedelta(days=int(work_days)-1)
+    
+    return start_date, end_date
+
+def calculate_cost(traffic_requests, storage_requests, traffic_cost_per_request, storage_cost_per_request, work_days, vat_rate=10):
+    # 날짜 계산
+    start_date, end_date = calculate_dates(work_days)
+    date_range = f"{start_date.strftime('%m-%d')} ~ {end_date.strftime('%m-%d')}"
+
     # 개별 비용 계산
     traffic_cost = traffic_requests * traffic_cost_per_request
     storage_cost = storage_requests * storage_cost_per_request
     daily_total = traffic_cost + storage_cost
     
-    # 7일 총 비용 계산
-    weekly_total = daily_total * 7  # 부가세 미포함
-    weekly_total_with_vat = weekly_total * (1 + vat_rate/100)  # 부가세 포함
+    # 총 비용 계산 (작업일수 반영)
+    total = daily_total * int(work_days)
+    total_with_vat = total * (1 + vat_rate/100)
 
     # 결과 텍스트 업데이트
     result_text.config(state='normal')
     result_text.delete(1.0, tk.END)
+    
+    # 작업 기간 표시 (내일부터 계산)
+    result_text.insert(tk.END, f"작업 기간: {date_range}\n\n")
     
     # 일반 텍스트 삽입
     if traffic_requests > 0:
@@ -50,9 +71,9 @@ def calculate_cost(traffic_requests, storage_requests, traffic_cost_per_request,
         result_text.insert(tk.END, f"저장하기 비용: {storage_cost:,} 원\n")
     if traffic_requests > 0 or storage_requests > 0:
         result_text.insert(tk.END, f"일 소진 비용: {daily_total:,} 원\n\n")
-        result_text.insert(tk.END, f"7일 작업 총 비용 (부가세 미포함): {weekly_total:,.0f} 원\n")
-        result_text.insert(tk.END, f"7일 작업 총 비용 (부가세 포함): {weekly_total_with_vat:,.0f} 원", 'bold_blue')
-        result_text.insert(tk.END, "\n\n")  # 빈 줄 추가
+        result_text.insert(tk.END, f"{work_days}일 작업 총 비용 (부가세 미포함): {total:,.0f} 원\n")
+        result_text.insert(tk.END, f"{work_days}일 작업 총 비용 (부가세 포함): {total_with_vat:,.0f} 원", 'bold_blue')
+        result_text.insert(tk.END, "\n\n")
         result_text.insert(tk.END, "주식회사 다인기획\n")
         result_text.insert(tk.END, "국민은행: 900901-01-688580")
     
@@ -61,12 +82,21 @@ def calculate_cost(traffic_requests, storage_requests, traffic_cost_per_request,
 def on_calculate():
     try:
         # 빈 입력값 처리
+        work_days_str = entry_work_days.get().strip()
         traffic_str = entry_traffic.get().strip()
         storage_str = entry_storage.get().strip()
         traffic_cost_str = entry_traffic_cost.get().strip()
         storage_cost_str = entry_storage_cost.get().strip()
         
-        # 건수와 단가 모두 비어있으면 에러 메시지 표시
+        # 작업일수 검증
+        if not work_days_str:
+            result_text.config(state='normal')
+            result_text.delete(1.0, tk.END)
+            result_text.insert(tk.END, "❌ 작업 일수를 입력해주세요!")
+            result_text.config(state='disabled')
+            return
+
+        # 건수와 단가 검증
         if not any([traffic_str, storage_str]):
             result_text.config(state='normal')
             result_text.delete(1.0, tk.END)
@@ -74,7 +104,6 @@ def on_calculate():
             result_text.config(state='disabled')
             return
             
-        # 단가가 비어있으면 에러 메시지 표시
         if not traffic_cost_str or not storage_cost_str:
             result_text.config(state='normal')
             result_text.delete(1.0, tk.END)
@@ -82,11 +111,20 @@ def on_calculate():
             result_text.config(state='disabled')
             return
 
-        # 빈 문자열은 0으로 처리
+        # 값 변환
+        work_days = int(work_days_str)
         traffic_requests = int(traffic_str) if traffic_str else 0
         storage_requests = int(storage_str) if storage_str else 0
         traffic_cost_per_request = int(traffic_cost_str)
         storage_cost_per_request = int(storage_cost_str)
+
+        # 유효성 검사
+        if work_days <= 0:
+            result_text.config(state='normal')
+            result_text.delete(1.0, tk.END)
+            result_text.insert(tk.END, "❌ 작업 일수는 1일 이상이어야 합니다.")
+            result_text.config(state='disabled')
+            return
 
         if any(x < 0 for x in [traffic_requests, storage_requests, traffic_cost_per_request, storage_cost_per_request]):
             result_text.config(state='normal')
@@ -94,7 +132,7 @@ def on_calculate():
             result_text.insert(tk.END, "❌ 음수는 입력할 수 없습니다.")
             result_text.config(state='disabled')
         else:
-            calculate_cost(traffic_requests, storage_requests, traffic_cost_per_request, storage_cost_per_request)
+            calculate_cost(traffic_requests, storage_requests, traffic_cost_per_request, storage_cost_per_request, work_days)
     except ValueError:
         result_text.config(state='normal')
         result_text.delete(1.0, tk.END)
@@ -109,8 +147,8 @@ def on_calculate():
 # GUI 설정
 root = tk.Tk()
 root.title("(c) 2025. 다인기획 Corp. All rights reserved.")
-root.geometry("500x700")  # 높이를 700으로 증가
-root.configure(bg='#FAFAFA')  # 밝은 회색 배경
+root.geometry("500x800")  # 전체 창 높이를 800으로 증가
+root.configure(bg='#FAFAFA')
 
 # 스타일 설정
 style = ttk.Style()
@@ -177,6 +215,14 @@ entry_storage_cost = ttk.Entry(storage_cost_frame)
 entry_storage_cost.pack(side=tk.RIGHT, expand=True, fill=tk.X, padx=(10, 0))
 entry_storage_cost.insert(0, "50")  # 기본값 설정
 
+# 작업 일수 입력
+work_days_frame = ttk.Frame(input_frame)
+work_days_frame.pack(fill=tk.X, padx=20, pady=10)
+ttk.Label(work_days_frame, text="작업 일수:", background='white').pack(side=tk.LEFT)
+entry_work_days = ttk.Entry(work_days_frame)
+entry_work_days.pack(side=tk.RIGHT, expand=True, fill=tk.X, padx=(10, 0))
+entry_work_days.insert(0, "7")  # 기본값 7일로 설정
+
 # 계산 버튼
 calculate_button = CustomButton(main_frame, text="계산하기", command=on_calculate)
 calculate_button.pack(pady=20)
@@ -189,16 +235,16 @@ result_frame = tk.Frame(result_outer_frame, bg='white', bd=1)
 result_frame.pack(fill=tk.BOTH, expand=True, padx=1, pady=1)
 
 result_text = tk.Text(result_frame, 
-    height=12,  # 높이를 8에서 12로 증가
+    height=15,  # 높이를 15로 증가
     font=('맑은 고딕', 11),
     bg='white',
     bd=0,
-    padx=15,
-    pady=15
+    padx=20,  # 좌우 여백 증가
+    pady=20   # 상하 여백 증가
 )
 result_text.pack(fill=tk.BOTH, expand=True)
 result_text.tag_configure('bold_blue', 
-    foreground='#1976D2',  # 진한 파란색
+    foreground='#1976D2',
     font=('맑은 고딕', 11, 'bold')
 )
 result_text.config(state='disabled')
