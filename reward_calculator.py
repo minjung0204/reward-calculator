@@ -197,8 +197,15 @@ style.configure('TEntry',
 main_frame = ttk.Frame(root, padding="30")
 main_frame.pack(fill=tk.BOTH, expand=True)
 
+# 업체명 입력 프레임
+company_frame = ttk.Frame(main_frame)
+company_frame.pack(pady=(0, 20))
+ttk.Label(company_frame, background=Constants.COLORS['bg']).pack(side=tk.LEFT)
+entry_company = ttk.Entry(company_frame, width=20, justify='center')
+entry_company.pack(side=tk.LEFT, padx=(5, 0))
+
 # 제목
-title_label = ttk.Label(main_frame, text="견적서", style='Title.TLabel')
+title_label = ttk.Label(main_frame, text="견적서", style='Title.TLabel', anchor='center')
 title_label.pack(pady=(0, 30))
 
 # 입력 프레임 (그림자 효과를 위한 추가 프레임)
